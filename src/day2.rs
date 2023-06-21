@@ -60,6 +60,38 @@ impl Throw {
             _ => panic!(),
         }
     }
+
+    fn to_achieve(against: &Throw, outcome: &Outcome) -> Throw {
+        match outcome {
+            Outcome::Draw => against.clone(),
+            Outcome::Win => match against {
+                Throw::Rock => Throw::Paper,
+                Throw::Paper => Throw::Scissors,
+                Throw::Scissors => Throw::Rock,
+            },
+            Outcome::Lose => match against {
+                Throw::Rock => Throw::Scissors,
+                Throw::Paper => Throw::Rock,
+                Throw::Scissors => Throw::Paper,
+            },
+        }
+    }
+}
+
+impl Outcome {
+    fn from_str(c: &str) -> Outcome {
+        match c {
+            "X" => Outcome::Lose,
+            "Y" => Outcome::Draw,
+            "Z" => Outcome::Win,
+            _ => panic!(),
+        }
+    }
+
+    fn points_against(&self, against: &Throw) -> i32 {
+        let mine = Throw::to_achieve(against, self);
+        mine.points_against(against)
+    }
 }
 
 #[cfg(test)]
@@ -77,18 +109,21 @@ mod tests {
     fn rock_over_scissors() {
         assert_eq!(Throw::Rock.against(&Throw::Scissors), Outcome::Win);
         assert_eq!(Throw::Rock.points_against(&Throw::Scissors), 7);
+        assert_eq!(Outcome::Win.points_against(&Throw::Scissors), 7);
     }
 
     #[test]
     fn rock_under_paper() {
         assert_eq!(Throw::Rock.against(&Throw::Paper), Outcome::Lose);
         assert_eq!(Throw::Rock.points_against(&Throw::Paper), 1);
+        assert_eq!(Outcome::Lose.points_against(&Throw::Paper), 1);
     }
 
     #[test]
     fn rock_opposite_rock() {
         assert_eq!(Throw::Rock.against(&Throw::Rock), Outcome::Draw);
         assert_eq!(Throw::Rock.points_against(&Throw::Rock), 4);
+        assert_eq!(Outcome::Draw.points_against(&Throw::Rock), 4);
     }
 }
 
@@ -107,8 +142,10 @@ pub fn main() {
         if let Ok(items) = line {
             let (first, second) = items.split_once(" ").expect("Invalid line received");
             let theirs = Throw::from_str(first);
-            let mine = Throw::from_str(second);
-            points += mine.points_against(&theirs);
+            // let mine = Throw::from_str(second);
+            // points += mine.points_against(&theirs);
+            let outcome = Outcome::from_str(second);
+            points += outcome.points_against(&theirs);
         }
     }
     println!("Result is {} points", points);
