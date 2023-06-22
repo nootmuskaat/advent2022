@@ -1,7 +1,7 @@
 #[path = "common.rs"]
 mod common;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -26,7 +26,7 @@ mod tests {
     }
 }
 
-pub fn main() {
+pub fn part1_main() {
     let f = File::open(common::filename()).expect("Couldn't open file");
     let reader = BufReader::new(f);
     let mut priority_sum = 0;
@@ -44,6 +44,39 @@ pub fn main() {
             }
             right_contents.clear();
             left_contents.clear();
+        }
+    }
+    println!("Cumulative priorities: {}", priority_sum);
+}
+
+pub fn main() {
+    let f = File::open(common::filename()).expect("Couldn't open file");
+    let mut lines = BufReader::new(f).lines();
+    let mut priority_sum = 0;
+    let mut contents: HashSet<char>;
+    let mut count: HashMap<char, usize> = HashMap::with_capacity(32);
+
+    loop {
+        if let Some(Ok(first)) = lines.next() {
+            let second = lines.next().unwrap().unwrap();
+            let third = lines.next().unwrap().unwrap();
+            for ruck in vec![first, second, third] {
+                contents = ruck.chars().collect();
+                for c in &contents {
+                    count.entry(*c).and_modify(|e| *e += 1).or_insert(1);
+                }
+                contents.clear();
+            }
+            for (c, v) in count.iter() {
+                if *v == 3 {
+                    // println!("The common char is {}", c);
+                    priority_sum += char_value(*c);
+                    break;
+                }
+            }
+            count.clear();
+        } else {
+            break;
         }
     }
     println!("Cumulative priorities: {}", priority_sum);
