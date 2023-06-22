@@ -1,6 +1,7 @@
+#[path="common.rs"] mod common;
+
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
-use std::env;
 use std::fs;
 use std::io::{BufRead, BufReader, Lines};
 
@@ -41,13 +42,6 @@ impl Iterator for InventoryFile {
     }
 }
 
-fn filename() -> String {
-    let args: Vec<String> = env::args().collect();
-    let f = args[1].clone();
-    println!("Will parse file {}", f);
-    f
-}
-
 #[allow(dead_code)]
 fn top_calories(inv: &mut InventoryFile) -> usize {
     let mut count: usize = 0;
@@ -83,7 +77,7 @@ fn top_3_calories(inv: &mut InventoryFile) -> usize {
 }
 
 pub fn main() {
-    let f = fs::File::open(filename()).expect("couldn't open file");
+    let f = fs::File::open(common::filename()).expect("couldn't open file");
     let mut inv = InventoryFile::new(f);
     // let most_calories = top_calories(&mut inv);
     let most_calories = top_3_calories(&mut inv);

@@ -1,5 +1,6 @@
+#[path="common.rs"] mod common;
+
 use std::cmp::Ordering;
-use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -127,15 +128,8 @@ mod tests {
     }
 }
 
-fn filename() -> String {
-    let args: Vec<String> = env::args().collect();
-    let f = args[1].clone();
-    println!("Will parse file {}", f);
-    f
-}
-
 pub fn main() {
-    let f = File::open(filename()).expect("couldn't open file");
+    let f = File::open(common::filename()).expect("couldn't open file");
     let reader = BufReader::new(f);
     let mut points = 0;
     for line in reader.lines() {
