@@ -1,6 +1,3 @@
-#[path = "common.rs"]
-mod common;
-
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -26,8 +23,8 @@ mod tests {
     }
 }
 
-pub fn part1_main() {
-    let f = File::open(common::filename()).expect("Couldn't open file");
+pub fn part1_main(filename: &str) {
+    let f = File::open(filename).expect("Couldn't open file");
     let reader = BufReader::new(f);
     let mut priority_sum = 0;
     let mut middle: usize;
@@ -49,8 +46,8 @@ pub fn part1_main() {
     println!("Cumulative priorities: {}", priority_sum);
 }
 
-pub fn main() {
-    let f = File::open(common::filename()).expect("Couldn't open file");
+pub fn part2_main(filename: &str) {
+    let f = File::open(filename).expect("Couldn't open file");
     let mut lines = BufReader::new(f).lines();
     let mut priority_sum = 0;
     let mut contents: HashSet<char>;

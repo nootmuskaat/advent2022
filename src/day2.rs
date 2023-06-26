@@ -1,5 +1,3 @@
-#[path="common.rs"] mod common;
-
 use std::cmp::Ordering;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -128,8 +126,8 @@ mod tests {
     }
 }
 
-pub fn main() {
-    let f = File::open(common::filename()).expect("couldn't open file");
+pub fn day2_main(filename: &str) {
+    let f = File::open(filename).expect("couldn't open file");
     let reader = BufReader::new(f);
     let mut points = 0;
     for line in reader.lines() {

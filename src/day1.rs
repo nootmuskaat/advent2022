@@ -1,5 +1,3 @@
-#[path="common.rs"] mod common;
-
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::fs;
@@ -76,8 +74,8 @@ fn top_3_calories(inv: &mut InventoryFile) -> usize {
     most_calories.iter().fold(0, |total, i| total + i.0)
 }
 
-pub fn main() {
-    let f = fs::File::open(common::filename()).expect("couldn't open file");
+pub fn day1_main(filename: &str) {
+    let f = fs::File::open(filename).expect("couldn't open file");
     let mut inv = InventoryFile::new(f);
     // let most_calories = top_calories(&mut inv);
     let most_calories = top_3_calories(&mut inv);
