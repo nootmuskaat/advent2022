@@ -8,7 +8,7 @@ pub fn day_main(filename: &str) {
     for line in lines {
         if let Ok(line) = line {
             if let Some(pair) = Pairing::from_str(&line) {
-                if pair.is_overlapping() {
+                if pair.one_overlaps_another() {
                     count += 1;
                     println!("Overlapping: {:?}", pair);
                 }
@@ -56,10 +56,17 @@ impl Pairing {
         None
     }
 
-    fn is_overlapping(&self) -> bool {
+    fn one_encompasses_another(&self) -> bool {
         // a encompasses b
         (self.a_side.start <= self.b_side.start && self.a_side.end >= self.b_side.end)
         // b encompasses a
             || (self.a_side.start >= self.b_side.start && self.a_side.end <= self.b_side.end)
+    }
+
+    fn one_overlaps_another(&self) -> bool {
+        (self.b_side.start <= self.a_side.start && self.a_side.start <= self.b_side.end)
+            || (self.b_side.start <= self.a_side.end && self.a_side.end <= self.b_side.end)
+            || (self.a_side.start <= self.b_side.start && self.b_side.start <= self.a_side.end)
+            || (self.a_side.start <= self.b_side.end && self.b_side.end <= self.a_side.end)
     }
 }
