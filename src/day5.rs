@@ -2,13 +2,19 @@ use regex::Regex;
 use std::fmt;
 use std::io::{BufRead, BufReader};
 
-#[derive(Debug)]
+#[allow(dead_code)]
+enum Crane {
+    CrateMover9000,
+    CrateMover9001,
+}
+
 struct Crates {
     stacks: Vec<Vec<char>>,
+    crane: Crane,
 }
 
 impl Crates {
-    fn from_lines(lines: &mut Vec<String>) -> Self {
+    fn from_lines(lines: &mut Vec<String>, crane: Crane) -> Self {
         let num_columns: usize = lines
             .pop()
             .unwrap()
@@ -34,16 +40,25 @@ impl Crates {
                 }
             }
         }
-        Self { stacks }
+        Self { stacks, crane }
     }
 
     fn move_items(&mut self, amount: usize, from: usize, onto: usize) {
-        for _ in 0..amount {
-            let c = self.stacks[from - 1].pop().expect(&format!(
-                "Invalid! move {} from {} to {}",
-                amount, from, onto
-            ));
-            self.stacks[onto - 1].push(c);
+        match self.crane {
+            Crane::CrateMover9000 => {
+                for _ in 0..amount {
+                    let c = self.stacks[from - 1].pop().expect(&format!(
+                        "Invalid! move {} from {} to {}",
+                        amount, from, onto
+                    ));
+                    self.stacks[onto - 1].push(c);
+                }
+            }
+            Crane::CrateMover9001 => {
+                let new_size = self.stacks[from - 1].len() - amount;
+                let moved = self.stacks[from - 1].split_off(new_size);
+                self.stacks[onto - 1].extend(moved);
+            }
         }
     }
 
@@ -93,7 +108,9 @@ pub fn day_main(filename: &str) {
             }
         }
     }
-    let mut crates = Crates::from_lines(&mut first_part);
+    // let crane = Crane::CrateMover9000;  // part 1
+    let crane = Crane::CrateMover9001; // part 2
+    let mut crates = Crates::from_lines(&mut first_part, crane);
     println!("Begining crate setup:\n{}", crates);
     // move 1 from 2 to 1
     let re = Regex::new(r"move (\d+) from (\d+) to (\d+)").unwrap();
