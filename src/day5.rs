@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::fmt;
 use std::io::{BufRead, BufReader};
 
@@ -35,6 +36,24 @@ impl Crates {
         }
         Self { stacks }
     }
+
+    fn move_items(&mut self, amount: usize, from: usize, onto: usize) {
+        for _ in 0..amount {
+            let c = self.stacks[from - 1].pop().expect(&format!(
+                "Invalid! move {} from {} to {}",
+                amount, from, onto
+            ));
+            self.stacks[onto - 1].push(c);
+        }
+    }
+
+    fn stack_tops(&self) -> Vec<char> {
+        let mut tops: Vec<char> = Vec::with_capacity(self.stacks.len());
+        for stack in &self.stacks {
+            tops.push(stack[stack.len() - 1]);
+        }
+        tops
+    }
 }
 
 impl fmt::Display for Crates {
@@ -63,10 +82,10 @@ impl fmt::Display for Crates {
 
 pub fn day_main(filename: &str) {
     let f = std::fs::File::open(filename).expect("Failed to open file");
-    let lines = BufReader::new(f).lines();
+    let mut lines = BufReader::new(f).lines();
     let mut first_part = Vec::with_capacity(16);
-    for line_ in lines {
-        if let Ok(lin) = line_ {
+    loop {
+        if let Some(Ok(lin)) = lines.next() {
             if lin.len() == 0 {
                 break;
             } else {
@@ -74,6 +93,22 @@ pub fn day_main(filename: &str) {
             }
         }
     }
-    let crates = Crates::from_lines(&mut first_part);
-    println!("{}", crates);
+    let mut crates = Crates::from_lines(&mut first_part);
+    println!("Begining crate setup:\n{}", crates);
+    // move 1 from 2 to 1
+    let re = Regex::new(r"move (\d+) from (\d+) to (\d+)").unwrap();
+    loop {
+        if let Some(Ok(text)) = lines.next() {
+            for cap in re.captures_iter(&text) {
+                let amount = &cap[1].parse::<usize>().unwrap();
+                let from = &cap[2].parse::<usize>().unwrap();
+                let onto = &cap[3].parse::<usize>().unwrap();
+                crates.move_items(*amount, *from, *onto);
+            }
+        } else {
+            break;
+        }
+    }
+    println!("After crate moves:\n{}", crates);
+    println!("Tops: {:?}", crates.stack_tops().iter().collect::<String>());
 }
