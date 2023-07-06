@@ -2,7 +2,9 @@
 use std::collections::{HashMap, HashSet};
 use std::io::{BufRead, BufReader};
 
-const PART_ONE_SIZE_LIMIT: u32 = 100000;
+// const PART_ONE_SIZE_LIMIT: u32 = 100000;
+const TOTAL_FS_SIZE: u32 = 70000000;
+const NEEDED_FREE_SPACE: u32 = 30000000;
 
 #[derive(Debug)]
 struct FSObject {
@@ -13,19 +15,39 @@ pub fn day_main(filename: &str) {
     let f = std::fs::File::open(filename).expect("Unable to read file");
     let lines = BufReader::new(f).lines();
     let mut paths: HashMap<String, FSObject> = HashMap::with_capacity(256);
+    paths.insert(
+        "/".to_owned(),
+        FSObject {
+            is_dir: true,
+            size: 0,
+        },
+    );
     let mut cwd: Vec<String> = Vec::with_capacity(16);
     for line_ in lines {
         if let Ok(line) = line_ {
             interpret_line(&line, &mut paths, &mut cwd);
         }
     }
-    let mut combined_size: u32 = 0;
-    for (dirname, fsobj) in paths {
-        if fsobj.is_dir && fsobj.size <= PART_ONE_SIZE_LIMIT {
-            combined_size += fsobj.size;
-        }
-    }
-    println!("Combined size: {}", combined_size);
+
+    // let mut combined_size: u32 = 0;
+    // for (dirname, fsobj) in &paths {
+    //     if fsobj.is_dir && fsobj.size <= PART_ONE_SIZE_LIMIT {
+    //         combined_size += fsobj.size;
+    //     }
+    // }
+    // println!("Combined size: {}", combined_size);
+
+    let root_size = paths.get("/").expect("We're missing root?").size;
+    let need_to_free = NEEDED_FREE_SPACE - (TOTAL_FS_SIZE - root_size);
+    let mut big_enough: Vec<(&String, &FSObject)> = paths
+        .iter()
+        .filter(|(&ref k, &ref v)| v.is_dir && v.size >= need_to_free)
+        .collect();
+    big_enough.sort_by(|a, b| a.1.size.cmp(&b.1.size));
+    println!(
+        "Smallest dir that's big enough: {}, size: {}",
+        big_enough[0].0, big_enough[0].1.size
+    );
 }
 
 fn interpret_line(line: &str, paths: &mut HashMap<String, FSObject>, cwd: &mut Vec<String>) {
