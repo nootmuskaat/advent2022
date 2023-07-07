@@ -11,6 +11,22 @@ enum Found {
     Tallest(Coord),
 }
 
+macro_rules! tallest_this_direction {
+    ($matrix:ident, $visible:ident, $row:ident, $col:ident, $current_tallest:ident) => {
+        match check_visible(&$matrix, ($row, $col), &$current_tallest) {
+            Found::Nothing => {}
+            Found::Taller(n, c) => {
+                $visible.insert(c);
+                $current_tallest = Some(n);
+            }
+            Found::Tallest(c) => {
+                $visible.insert(c);
+                break;
+            }
+        }
+    };
+}
+
 pub fn day_main(filename: &str) {
     let f = std::fs::File::open(filename).expect("Unable to open file");
     let mut lines = BufReader::new(f).lines();
@@ -21,67 +37,27 @@ pub fn day_main(filename: &str) {
     for row in 0..matrix.len() {
         current_tallest = None;
         for col in 0..matrix[row].len() {
-            match nameme(&matrix, (row, col), &current_tallest) {
-                Found::Nothing => {}
-                Found::Taller(n, c) => {
-                    visible.insert(c);
-                    current_tallest = Some(n);
-                }
-                Found::Tallest(c) => {
-                    visible.insert(c);
-                    break;
-                }
-            }
+            tallest_this_direction!(matrix, visible, row, col, current_tallest)
         }
         current_tallest = None;
         for col in (0..matrix[row].len()).rev() {
-            match nameme(&matrix, (row, col), &current_tallest) {
-                Found::Nothing => {}
-                Found::Taller(n, c) => {
-                    visible.insert(c);
-                    current_tallest = Some(n);
-                }
-                Found::Tallest(c) => {
-                    visible.insert(c);
-                    break;
-                }
-            }
+            tallest_this_direction!(matrix, visible, row, col, current_tallest)
         }
     }
     for col in (0..matrix[0].len()).rev() {
         current_tallest = None;
         for row in 0..matrix.len() {
-            match nameme(&matrix, (row, col), &current_tallest) {
-                Found::Nothing => {}
-                Found::Taller(n, c) => {
-                    visible.insert(c);
-                    current_tallest = Some(n);
-                }
-                Found::Tallest(c) => {
-                    visible.insert(c);
-                    break;
-                }
-            }
+            tallest_this_direction!(matrix, visible, row, col, current_tallest)
         }
         current_tallest = None;
         for row in (0..matrix.len()).rev() {
-            match nameme(&matrix, (row, col), &current_tallest) {
-                Found::Nothing => {}
-                Found::Taller(n, c) => {
-                    visible.insert(c);
-                    current_tallest = Some(n);
-                }
-                Found::Tallest(c) => {
-                    visible.insert(c);
-                    break;
-                }
-            }
+            tallest_this_direction!(matrix, visible, row, col, current_tallest)
         }
     }
     println!("{:?}", visible.len());
 }
 
-fn nameme(matrix: &Vec<Row>, coord: Coord, current_tallest: &CurrentTallest) -> Found {
+fn check_visible(matrix: &Vec<Row>, coord: Coord, current_tallest: &CurrentTallest) -> Found {
     let (row, col) = coord;
     if matrix[row][col] == TALLEST_POSSIBLE {
         return Found::Tallest(coord);
