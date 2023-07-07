@@ -5,6 +5,7 @@ pub mod day4;
 pub mod day5;
 pub mod day6;
 pub mod day7;
+pub mod day8;
 
 pub fn filename() -> String {
     let args: Vec<String> = std::env::args().collect();
@@ -15,5 +16,5 @@ pub fn filename() -> String {
 
 fn main() {
     let f = filename();
-    day7::day_main(&f);
+    day8::day_main(&f);
 }
