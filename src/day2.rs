@@ -126,18 +126,27 @@ mod tests {
     }
 }
 
-pub fn day2_main(filename: &str) {
+pub fn day_main(filename: &str, part: u8) {
     let f = File::open(filename).expect("couldn't open file");
     let reader = BufReader::new(f);
     let mut points = 0;
-    for line in reader.lines() {
-        if let Ok(items) = line {
-            let (first, second) = items.split_once(" ").expect("Invalid line received");
-            let theirs = Throw::from_str(first);
-            // let mine = Throw::from_str(second);
-            // points += mine.points_against(&theirs);
-            let outcome = Outcome::from_str(second);
-            points += outcome.points_against(&theirs);
+    if part == 1 {
+        for line in reader.lines() {
+            if let Ok(items) = line {
+                let (first, second) = items.split_once(" ").expect("Invalid line received");
+                let theirs = Throw::from_str(first);
+                let mine = Throw::from_str(second);
+                points += mine.points_against(&theirs);
+            }
+        }
+    } else {
+        for line in reader.lines() {
+            if let Ok(items) = line {
+                let (first, second) = items.split_once(" ").expect("Invalid line received");
+                let theirs = Throw::from_str(first);
+                let outcome = Outcome::from_str(second);
+                points += outcome.points_against(&theirs);
+            }
         }
     }
     println!("Result is {} points", points);

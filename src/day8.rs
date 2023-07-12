@@ -27,7 +27,7 @@ macro_rules! tallest_this_direction {
     };
 }
 
-pub fn day_main(filename: &str) {
+pub fn day_main(filename: &str, _part: u8) {
     let f = std::fs::File::open(filename).expect("Unable to open file");
     let lines = BufReader::new(f).lines();
     let matrix = create_matrix(lines);

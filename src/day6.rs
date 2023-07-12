@@ -5,10 +5,15 @@ enum Marker {
     StartOfMessage = 14,
 }
 
-pub fn day_main(filename: &str) {
+pub fn day_main(filename: &str, part: u8) {
     let f = std::fs::read_to_string(filename).expect("Failed to read file");
     let mut stream = f.chars();
-    match find_marker_start(&mut stream, Marker::StartOfMessage) {
+    let marker = match part {
+        1 => Marker::StartOfPacket,
+        2 => Marker::StartOfMessage,
+        _ => panic!("Unimplemented part!"),
+    };
+    match find_marker_start(&mut stream, marker) {
         Some(marker_start) => {
             println!("Marker starts at index {}", marker_start);
         }
@@ -24,7 +29,7 @@ fn find_marker_start(
 ) -> Option<usize> {
     let marker_len = marker_type as usize;
     let mut buffer: VecDeque<char> = VecDeque::with_capacity(marker_len);
-    let mut check: HashSet<&char> = HashSet::with_capacity(marker_len);
+    let mut check: HashSet<&char>; // = HashSet::with_capacity(marker_len);
     let mut e = stream.enumerate();
     while let Some((idx, chr)) = e.next() {
         if buffer.len() == marker_len {

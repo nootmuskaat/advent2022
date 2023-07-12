@@ -74,10 +74,14 @@ fn top_3_calories(inv: &mut InventoryFile) -> usize {
     most_calories.iter().fold(0, |total, i| total + i.0)
 }
 
-pub fn day1_main(filename: &str) {
+pub fn day_main(filename: &str, part: u8) {
     let f = fs::File::open(filename).expect("couldn't open file");
     let mut inv = InventoryFile::new(f);
-    // let most_calories = top_calories(&mut inv);
-    let most_calories = top_3_calories(&mut inv);
+    let most_calories: usize;
+    if part == 1 {
+        most_calories = top_calories(&mut inv);
+    } else {
+        most_calories = top_3_calories(&mut inv);
+    }
     println!("The most calories available: {:?}", most_calories);
 }

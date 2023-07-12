@@ -95,7 +95,7 @@ impl fmt::Display for Crates {
     }
 }
 
-pub fn day_main(filename: &str) {
+pub fn day_main(filename: &str, part: u8) {
     let f = std::fs::File::open(filename).expect("Failed to open file");
     let mut lines = BufReader::new(f).lines();
     let mut first_part = Vec::with_capacity(16);
@@ -108,8 +108,11 @@ pub fn day_main(filename: &str) {
             }
         }
     }
-    // let crane = Crane::CrateMover9000;  // part 1
-    let crane = Crane::CrateMover9001; // part 2
+    let crane = match part {
+        1 => Crane::CrateMover9000,
+        2 => Crane::CrateMover9001,
+        _ => panic!("Unimplemented part!"),
+    };
     let mut crates = Crates::from_lines(&mut first_part, crane);
     println!("Begining crate setup:\n{}", crates);
     // move 1 from 2 to 1

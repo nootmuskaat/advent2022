@@ -23,6 +23,14 @@ mod tests {
     }
 }
 
+pub fn day_main(filename: &str, part: u8) {
+    if part == 1 {
+        part1_main(filename)
+    } else {
+        part1_main(filename)
+    }
+}
+
 pub fn part1_main(filename: &str) {
     let f = File::open(filename).expect("Couldn't open file");
     let reader = BufReader::new(f);

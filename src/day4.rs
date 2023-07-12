@@ -1,6 +1,6 @@
 use std::io::{BufRead, BufReader};
 
-pub fn day_main(filename: &str) {
+pub fn day_main(filename: &str, part: u8) {
     let f = std::fs::File::open(filename).expect("Couldn't open file");
     let lines = BufReader::new(f).lines();
     let mut count = 0;
@@ -8,7 +8,10 @@ pub fn day_main(filename: &str) {
     for line in lines {
         if let Ok(line) = line {
             if let Some(pair) = Pairing::from_str(&line) {
-                if pair.one_overlaps_another() {
+                if part == 1 && pair.one_encompasses_another() {
+                    count += 1;
+                    println!("Encompassing: {:?}", pair);
+                } else if part == 2 && pair.one_overlaps_another() {
                     count += 1;
                     println!("Overlapping: {:?}", pair);
                 }
