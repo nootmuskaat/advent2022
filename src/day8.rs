@@ -29,11 +29,11 @@ macro_rules! tallest_this_direction {
 
 pub fn day_main(filename: &str) {
     let f = std::fs::File::open(filename).expect("Unable to open file");
-    let mut lines = BufReader::new(f).lines();
+    let lines = BufReader::new(f).lines();
     let matrix = create_matrix(lines);
     // println!("{:?}", &matrix);
     let mut visible: HashSet<Coord> = HashSet::with_capacity(128);
-    let mut current_tallest: CurrentTallest = None;
+    let mut current_tallest: CurrentTallest;
     for row in 0..matrix.len() {
         current_tallest = None;
         for col in 0..matrix[row].len() {
