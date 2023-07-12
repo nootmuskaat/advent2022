@@ -16,6 +16,12 @@ enum Outcome {
     Draw = 3,
 }
 
+trait Strategy {
+    fn from_str(c: &str) -> Self;
+
+    fn points_against(&self, against: &Throw) -> i32;
+}
+
 impl PartialOrd for Throw {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -46,20 +52,6 @@ impl Throw {
         }
     }
 
-    fn points_against(&self, other: &Self) -> i32 {
-        let outcome = self.against(other);
-        (*self as i32) + (outcome as i32)
-    }
-
-    fn from_str(c: &str) -> Throw {
-        match c {
-            "A" | "X" => Throw::Rock,
-            "B" | "Y" => Throw::Paper,
-            "C" | "Z" => Throw::Scissors,
-            _ => panic!(),
-        }
-    }
-
     fn to_achieve(against: &Throw, outcome: &Outcome) -> Throw {
         match outcome {
             Outcome::Draw => against.clone(),
@@ -77,7 +69,23 @@ impl Throw {
     }
 }
 
-impl Outcome {
+impl Strategy for Throw {
+    fn from_str(c: &str) -> Throw {
+        match c {
+            "A" | "X" => Throw::Rock,
+            "B" | "Y" => Throw::Paper,
+            "C" | "Z" => Throw::Scissors,
+            _ => panic!(),
+        }
+    }
+
+    fn points_against(&self, other: &Self) -> i32 {
+        let outcome = self.against(other);
+        (*self as i32) + (outcome as i32)
+    }
+}
+
+impl Strategy for Outcome {
     fn from_str(c: &str) -> Outcome {
         match c {
             "X" => Outcome::Lose,
@@ -95,7 +103,7 @@ impl Outcome {
 
 #[cfg(test)]
 mod tests {
-    use super::{Outcome, Throw};
+    use super::*;
 
     #[test]
     fn construct_throws() {
@@ -126,27 +134,23 @@ mod tests {
     }
 }
 
+fn strategy(part: u8, hint: &str, theirs: &Throw) -> i32 {
+    match part {
+        1 => Throw::from_str(hint).points_against(&theirs),
+        2 => Outcome::from_str(hint).points_against(&theirs),
+        _ => panic!("unimplemented part"),
+    }
+}
+
 pub fn day_main(filename: &str, part: u8) {
     let f = File::open(filename).expect("couldn't open file");
     let reader = BufReader::new(f);
     let mut points = 0;
-    if part == 1 {
-        for line in reader.lines() {
-            if let Ok(items) = line {
-                let (first, second) = items.split_once(" ").expect("Invalid line received");
-                let theirs = Throw::from_str(first);
-                let mine = Throw::from_str(second);
-                points += mine.points_against(&theirs);
-            }
-        }
-    } else {
-        for line in reader.lines() {
-            if let Ok(items) = line {
-                let (first, second) = items.split_once(" ").expect("Invalid line received");
-                let theirs = Throw::from_str(first);
-                let outcome = Outcome::from_str(second);
-                points += outcome.points_against(&theirs);
-            }
+    for line in reader.lines() {
+        if let Ok(items) = line {
+            let (first, second) = items.split_once(" ").expect("Invalid line received");
+            let theirs = Throw::from_str(first);
+            points += strategy(part, second, &theirs)
         }
     }
     println!("Result is {} points", points);
