@@ -27,11 +27,90 @@ macro_rules! tallest_this_direction {
     };
 }
 
-pub fn day_main(filename: &str, _part: u8) {
+pub fn day_main(filename: &str, part: u8) {
     let f = std::fs::File::open(filename).expect("Unable to open file");
     let lines = BufReader::new(f).lines();
     let matrix = create_matrix(lines);
     // println!("{:?}", &matrix);
+    match part {
+        1 => part1_main(&matrix),
+        2 => part2_main(&matrix),
+        _ => panic!("part not implemented"),
+    }
+}
+
+fn part2_main(matrix: &Vec<Vec<u8>>) {
+    let mut scores: Vec<Vec<usize>> = Vec::with_capacity(matrix.len());
+    for _ in 0..matrix.len() {
+        scores.push(vec![1 as usize; matrix[0].len()]);
+    }
+    part2_run(matrix, &mut scores);
+}
+
+fn part2_run(matrix: &Vec<Vec<u8>>, scores: &mut Vec<Vec<usize>>) {
+    for (row, row_of_trees) in matrix.iter().enumerate() {
+        for (col, tree_height) in row_of_trees.iter().enumerate() {
+            if col + 1 == row_of_trees.len() {
+                scores[row][col] *= 0;
+                break;
+            }
+            for offset in 1.. {
+                if col + offset == row_of_trees.len() {
+                    scores[row][col] *= offset - 1;
+                    break;
+                } else if row_of_trees[col + offset] >= *tree_height {
+                    scores[row][col] *= offset;
+                    break;
+                }
+            }
+        }
+        for (col, tree_height) in row_of_trees.iter().enumerate().rev() {
+            if col == 0 {
+                scores[row][col] *= 0;
+                break;
+            }
+            for offset in 1.. {
+                if col + 1 - offset == 0 {
+                    scores[row][col] *= offset - 1;
+                    break;
+                } else if row_of_trees[col - offset] >= *tree_height {
+                    scores[row][col] *= offset;
+                    break;
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn basic_part2_run() {
+        let matrix: Vec<Vec<u8>> = vec![
+            vec![1, 2, 3, 2, 3, 2, 2, 1],
+            vec![3, 3, 2, 1, 1, 1, 5, 1],
+            vec![4, 1, 3, 3, 3, 3, 3, 1],
+        ];
+        let mut scores: Vec<Vec<usize>> = vec![
+            vec![1, 1, 1, 1, 1, 1, 1, 1],
+            vec![1, 1, 1, 1, 1, 1, 1, 1],
+            vec![1, 1, 1, 1, 1, 1, 1, 1],
+        ];
+        part2_run(&matrix, &mut scores);
+
+        println!("{:?}", scores);
+        let expected: Vec<Vec<usize>> = vec![
+            vec![0, 1, 4, 1, 6, 1, 1, 0],
+            vec![0, 5, 4, 1, 1, 1, 6, 0],
+            vec![0, 1, 2, 1, 1, 1, 1, 0],
+        ];
+        assert_eq!(expected, scores);
+    }
+}
+
+fn part1_main(matrix: &Vec<Vec<u8>>) {
     let mut visible: HashSet<Coord> = HashSet::with_capacity(128);
     let mut current_tallest: CurrentTallest;
     for row in 0..matrix.len() {
