@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::io::{BufRead, BufReader};
 
 type Row = Vec<u8>;
+type Matrix = Vec<Row>;
 type Coord = (usize, usize);
 type CurrentTallest = Option<u8>;
 const TALLEST_POSSIBLE: u8 = 9;
@@ -9,6 +10,66 @@ enum Found {
     Nothing,
     Taller(u8, Coord),
     Tallest(Coord),
+}
+
+enum Looking<'a> {
+    North(&'a Matrix),
+    South(&'a Matrix),
+    East(&'a Matrix),
+    West(&'a Matrix),
+}
+
+impl Looking<'_> {
+    fn height_at(&self, row: usize, col: usize) -> u8 {
+        match self {
+            Looking::East(matrix)
+            | Looking::West(matrix)
+            | Looking::North(matrix)
+            | Looking::South(matrix) => matrix[row][col],
+        }
+    }
+
+    fn visible(&self, row: usize, col: usize) -> usize {
+        let mut distance: usize = 0;
+        let my_height = self.height_at(row, col);
+        match self {
+            Looking::North(matrix) => {
+                for (idx, this_row) in matrix[..row].iter().rev().enumerate() {
+                    let this_height = this_row[col];
+                    distance = idx + 1;
+                    if this_height >= my_height {
+                        break;
+                    }
+                }
+            }
+            Looking::South(matrix) => {
+                for (idx, this_row) in matrix[(row + 1)..].iter().enumerate() {
+                    let this_height = this_row[col];
+                    distance = idx + 1;
+                    if this_height >= my_height {
+                        break;
+                    }
+                }
+            }
+            Looking::East(matrix) => {
+                for (idx, &this_height) in matrix[row][(col + 1)..].iter().enumerate() {
+                    distance = idx + 1;
+                    if this_height >= my_height {
+                        break;
+                    }
+                }
+            }
+            Looking::West(matrix) => {
+                for (idx, &this_height) in matrix[row][0..col].iter().rev().enumerate() {
+                    distance = idx + 1;
+                    if this_height >= my_height {
+                        break;
+                    }
+                }
+            }
+        }
+        distance
+    }
 }
 
 macro_rules! tallest_this_direction {
@@ -45,39 +106,22 @@ fn part2_main(matrix: &Vec<Vec<u8>>) {
         scores.push(vec![1 as usize; matrix[0].len()]);
     }
     part2_run(matrix, &mut scores);
+    let mut greatest: usize = 0;
+    for row in scores {
+        for col in row {
+            greatest = greatest.max(col);
+        }
+    }
+    println!("Greatest score: {}", greatest);
 }
 
 fn part2_run(matrix: &Vec<Vec<u8>>, scores: &mut Vec<Vec<usize>>) {
     for (row, row_of_trees) in matrix.iter().enumerate() {
-        for (col, tree_height) in row_of_trees.iter().enumerate() {
-            if col + 1 == row_of_trees.len() {
-                scores[row][col] *= 0;
-                break;
-            }
-            for offset in 1.. {
-                if col + offset == row_of_trees.len() {
-                    scores[row][col] *= offset - 1;
-                    break;
-                } else if row_of_trees[col + offset] >= *tree_height {
-                    scores[row][col] *= offset;
-                    break;
-                }
-            }
-        }
-        for (col, tree_height) in row_of_trees.iter().enumerate().rev() {
-            if col == 0 {
-                scores[row][col] *= 0;
-                break;
-            }
-            for offset in 1.. {
-                if col + 1 - offset == 0 {
-                    scores[row][col] *= offset - 1;
-                    break;
-                } else if row_of_trees[col - offset] >= *tree_height {
-                    scores[row][col] *= offset;
-                    break;
-                }
-            }
+        for col in 0..row_of_trees.len() {
+            scores[row][col] = Looking::East(matrix).visible(row, col)
+                * Looking::West(matrix).visible(row, col)
+                * Looking::South(matrix).visible(row, col)
+                * Looking::North(matrix).visible(row, col);
         }
     }
 }
@@ -89,11 +133,15 @@ mod test {
     #[test]
     fn basic_part2_run() {
         let matrix: Vec<Vec<u8>> = vec![
+            vec![1, 1, 1, 1, 1, 1, 1, 1],
             vec![1, 2, 3, 2, 3, 2, 2, 1],
             vec![3, 3, 2, 1, 1, 1, 5, 1],
             vec![4, 1, 3, 3, 3, 3, 3, 1],
+            vec![1, 1, 1, 1, 1, 1, 1, 1],
         ];
         let mut scores: Vec<Vec<usize>> = vec![
+            vec![1, 1, 1, 1, 1, 1, 1, 1],
+            vec![1, 1, 1, 1, 1, 1, 1, 1],
             vec![1, 1, 1, 1, 1, 1, 1, 1],
             vec![1, 1, 1, 1, 1, 1, 1, 1],
             vec![1, 1, 1, 1, 1, 1, 1, 1],
@@ -102,9 +150,11 @@ mod test {
 
         println!("{:?}", scores);
         let expected: Vec<Vec<usize>> = vec![
-            vec![0, 1, 4, 1, 6, 1, 1, 0],
-            vec![0, 5, 4, 1, 1, 1, 6, 0],
-            vec![0, 1, 2, 1, 1, 1, 1, 0],
+            vec![0, 0, 0, 0, 0, 0, 0, 0],
+            vec![0, 1, 8, 2, 12, 2, 1, 0],
+            vec![0, 20, 4, 1, 1, 1, 24, 0],
+            vec![0, 1, 4, 3, 2, 3, 1, 0],
+            vec![0, 0, 0, 0, 0, 0, 0, 0],
         ];
         assert_eq!(expected, scores);
     }
