@@ -23,8 +23,10 @@ struct State {
     head: Coords,
     tail: Coords,
     moves: LineBuffer,
+    current: Option<Moves>,
 }
 
+#[derive(Clone, Copy, Debug)]
 enum Direction {
     Up,
     Down,
@@ -44,41 +46,31 @@ impl Direction {
     }
 }
 
-struct Moves<'a> {
-    state: &'a mut State,
+#[derive(Debug)]
+struct Moves {
     direction: Direction,
     count: usize,
 }
 
-impl Iterator for Moves<'_> {
-    type Item = Coords;
+trait Decrement {
+    fn decrement(&self) -> Self;
+}
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.count == 0 {
-            return None;
+impl Decrement for Option<Moves> {
+    fn decrement(&self) -> Option<Moves> {
+        match self {
+            Some(m) => {
+                if m.count <= 1 {
+                    None
+                } else {
+                    Some(Moves {
+                        direction: m.direction,
+                        count: m.count - 1,
+                    })
+                }
+            }
+            None => None,
         }
-        self.count -= 1;
-        let old_head = self.state.head;
-        match self.direction {
-            Direction::Up => {
-                self.state.head.1 += 1;
-            }
-            Direction::Down => {
-                self.state.head.1 -= 1;
-            }
-            Direction::Left => {
-                self.state.head.0 -= 1;
-            }
-            Direction::Right => {
-                self.state.head.0 += 1;
-            }
-        }
-        if self.state.head.0.abs_diff(self.state.tail.0) > 1
-            || self.state.head.1.abs_diff(self.state.tail.1) > 1
-        {
-            self.state.tail = old_head;
-        }
-        Some(self.state.tail)
     }
 }
 
@@ -88,35 +80,62 @@ impl State {
             head: (0, 0),
             tail: (0, 0),
             moves: lines,
+            current: None,
         }
     }
 
-    fn evaluate_line(&mut self, line: &str) -> Moves {
-        let mut parts = line.split_ascii_whitespace();
-        let dir_str = parts.next().expect("Blank line received");
-        let count_str = parts.next().expect("Line missing move count");
-        let direction = Direction::from_str(dir_str);
-        let count: usize = count_str.parse().expect("Move count not an integer");
-        Moves {
-            direction,
-            count,
-            state: self,
+    fn move_head(&mut self, direction: Direction) {
+        match direction {
+            Direction::Up => {
+                self.head.1 += 1;
+            }
+            Direction::Down => {
+                self.head.1 -= 1;
+            }
+            Direction::Left => {
+                self.head.0 -= 1;
+            }
+            Direction::Right => {
+                self.head.0 += 1;
+            }
         }
     }
 }
 
-impl Iterator for State {
-    type Item<'a> = Moves<'a>;
+fn read_line(line: &str) -> Moves {
+    let mut parts = line.split_ascii_whitespace();
+    let dir_str = parts.next().expect("Blank line received");
+    let count_str = parts.next().expect("Line missing move count");
+    let direction = Direction::from_str(dir_str);
+    let count: usize = count_str.parse().expect("Move count not an integer");
+    Moves { direction, count }
+}
 
-    fn next(&mut self) -> Option<Moves> {
-        let next_move = self.moves.next();
-        match next_move {
-            Some(Ok(this_move)) => Some(self.evaluate_line(&this_move)),
-            Some(Err(e)) => {
+impl Iterator for State {
+    type Item = Coords;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current.is_none() {
+            let next_move = self.moves.next();
+            if let Some(Ok(this_move)) = next_move {
+                self.current = Some(read_line(&this_move));
+            } else if let Some(Err(e)) = next_move {
                 eprintln!("Unable to process line: {:?}", e);
-                None
+                return None;
+            } else {
+                return None;
             }
-            None => None,
         }
+        // println!(
+        //     "head={:?}, tail={:?}, current={:?}",
+        //     self.head, self.tail, self.current
+        // );
+        let old_head = self.head;
+        self.move_head(self.current.as_ref().unwrap().direction);
+        self.current = self.current.decrement();
+        if self.head.0.abs_diff(self.tail.0) > 1 || self.head.1.abs_diff(self.tail.1) > 1 {
+            self.tail = old_head;
+        }
+        Some(self.tail)
     }
 }
