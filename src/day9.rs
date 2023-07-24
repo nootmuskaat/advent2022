@@ -7,21 +7,18 @@ type LineBuffer = Lines<BufReader<File>>;
 
 pub fn day_main(filename: &str, part: u8) {
     let f = File::open(filename).expect("Unable to open file");
-    match part {
-        1 => part1(f),
+    let length: usize = match part {
+        1 => 2,
+        2 => 10,
         _ => panic!("Not implemented"),
-    }
-}
-
-fn part1(f: File) {
+    };
     let lines = BufReader::new(f).lines();
-    let coords: HashSet<Coords> = State::new(lines).collect();
+    let coords: HashSet<Coords> = State::new(length, lines).collect();
     println!("Total spaces covered: {}", coords.len());
 }
 
 struct State {
-    head: Coords,
-    tail: Coords,
+    rope: Vec<Coords>,
     moves: LineBuffer,
     current: Option<Moves>,
 }
@@ -75,10 +72,9 @@ impl Decrement for Option<Moves> {
 }
 
 impl State {
-    fn new(lines: LineBuffer) -> Self {
+    fn new(length: usize, lines: LineBuffer) -> Self {
         Self {
-            head: (0, 0),
-            tail: (0, 0),
+            rope: vec![(0, 0); length],
             moves: lines,
             current: None,
         }
@@ -87,16 +83,16 @@ impl State {
     fn move_head(&mut self, direction: Direction) {
         match direction {
             Direction::Up => {
-                self.head.1 += 1;
+                self.rope[0].1 += 1;
             }
             Direction::Down => {
-                self.head.1 -= 1;
+                self.rope[0].1 -= 1;
             }
             Direction::Left => {
-                self.head.0 -= 1;
+                self.rope[0].0 -= 1;
             }
             Direction::Right => {
-                self.head.0 += 1;
+                self.rope[0].0 += 1;
             }
         }
     }
@@ -126,16 +122,37 @@ impl Iterator for State {
                 return None;
             }
         }
-        // println!(
-        //     "head={:?}, tail={:?}, current={:?}",
-        //     self.head, self.tail, self.current
-        // );
-        let old_head = self.head;
+        // println!("{:?}", self.rope);
+        // println!("instruction={:?}", self.current);
         self.move_head(self.current.as_ref().unwrap().direction);
         self.current = self.current.decrement();
-        if self.head.0.abs_diff(self.tail.0) > 1 || self.head.1.abs_diff(self.tail.1) > 1 {
-            self.tail = old_head;
+
+        for i in 1..self.rope.len() {
+            if i == self.rope.len() {
+                break;
+            }
+            let tail = self.rope[i];
+            let head = self.rope[i - 1];
+            if head.0.abs_diff(tail.0) > 1 {
+                // && head.1.abs_diff(tail.1) == 1 {
+                let new_x = tail.0 + ((head.0 - tail.0) / 2);
+                let new_y = if head.1 == tail.1 {
+                    tail.1
+                } else if head.1.abs_diff(tail.1) == 2 {
+                    tail.1 + ((head.1 - tail.1) / 2)
+                } else {
+                    head.1
+                };
+                self.rope[i] = (new_x, new_y);
+            } else if head.1.abs_diff(tail.1) > 1 {
+                //&& head.0.abs_diff(tail.0) == 1 {
+                let new_y = tail.1 + ((head.1 - tail.1) / 2);
+                let new_x = if head.0 == tail.0 { tail.0 } else { head.0 };
+                self.rope[i] = (new_x, new_y);
+            } else {
+                break;
+            }
         }
-        Some(self.tail)
+        Some(self.rope[self.rope.len() - 1])
     }
 }
