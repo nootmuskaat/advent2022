@@ -3,17 +3,24 @@ use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub fn day_main(filename: &str, _part: u8) {
+type Item = usize;
+
+pub fn day_main(filename: &str, part: u8) {
     let f = File::open(filename).expect("Unable to open file");
     let mut monkeys = create_monkeys(f);
     let mut counts: Vec<usize> = vec![0; monkeys.len()];
     for (i, monkey) in monkeys.iter().enumerate() {
         println!("{}: {:?}", i, monkey);
     }
-    for round in 0..20 {
+    let (rounds, destresser) = match part {
+        1 => (20, StressManager::Divide(3)),
+        2 => (10000, StressManager::Remainder(monkey_divisor(&monkeys))),
+        _ => panic!("Not implemented"),
+    };
+    for _ in 0..rounds {
         for i in 0..monkeys.len() {
             while monkeys[i].items.len() > 0 {
-                let (to_idx, val) = monkeys[i].inspect_item();
+                let (to_idx, val) = monkeys[i].inspect_item(&destresser);
                 counts[i] += 1;
                 monkeys[to_idx].items.push_back(val);
             }
@@ -24,6 +31,24 @@ pub fn day_main(filename: &str, _part: u8) {
     let most = counts.pop().unwrap();
     let next_most = counts.pop().unwrap();
     println!("{}", most * next_most);
+}
+
+fn monkey_divisor(monkeys: &Vec<Monkey>) -> usize {
+    monkeys.iter().map(|m| m.quotient).fold(1, |x, y| x * y)
+}
+
+enum StressManager {
+    Divide(Item),
+    Remainder(Item),
+}
+
+impl StressManager {
+    fn perform(&self, other: Item) -> Item {
+        match self {
+            StressManager::Divide(d) => other / d,
+            StressManager::Remainder(d) => other % d,
+        }
+    }
 }
 
 const OPERATION_LINE: &str = r"Operation: new = old (.) (\d+|old)";
@@ -60,17 +85,17 @@ fn create_monkey(buffer: &Vec<String>) -> Monkey {
     let if_false_line: Regex = Regex::new(&IF_FALSE_LINE).unwrap();
 
     let parts: Vec<_> = buffer[0].split(": ").collect();
-    let items: VecDeque<usize> = parts[1]
+    let items: VecDeque<Item> = parts[1]
         .split(", ")
-        .map(|x| x.parse::<usize>().unwrap())
+        .map(|x| x.parse::<Item>().unwrap())
         .collect();
     let operation_parts = operation_line.captures(&buffer[1]).unwrap();
     let operation = Operation::from_str(&operation_parts[1]);
-    let operand: usize = match &operation_parts[2] {
+    let operand: Item = match &operation_parts[2] {
         "old" => 0,
-        s => s.parse::<usize>().unwrap(),
+        s => s.parse::<Item>().unwrap(),
     };
-    let quotient: usize = quotient_line.captures(&buffer[2]).unwrap()[1]
+    let quotient: Item = quotient_line.captures(&buffer[2]).unwrap()[1]
         .parse()
         .unwrap();
     let if_true: usize = if_true_line.captures(&buffer[3]).unwrap()[1]
@@ -104,7 +129,7 @@ impl Operation {
         }
     }
 
-    fn perform(&self, a: usize, b: usize) -> usize {
+    fn perform(&self, a: &Item, b: &Item) -> Item {
         match self {
             Operation::Add => a + b,
             Operation::Multiply => a * b,
@@ -114,31 +139,29 @@ impl Operation {
 
 #[derive(Debug)]
 struct Monkey {
-    items: VecDeque<usize>,
+    items: VecDeque<Item>,
     operation: Operation,
-    operand: usize,
-    quotient: usize,
+    operand: Item,
+    quotient: Item,
     if_true: usize,
     if_false: usize,
 }
 
 impl Monkey {
-    fn inspect_item(&mut self) -> (usize, usize) {
-        let mut new_val: usize;
-        if let Some(item) = self.items.pop_front() {
-            if self.operand == 0 {
-                new_val = self.operation.perform(item, item);
-            } else {
-                new_val = self.operation.perform(item, self.operand);
-            }
-            new_val /= 3;
-            if new_val % self.quotient == 0 {
-                (self.if_true, new_val)
-            } else {
-                (self.if_false, new_val)
-            }
+    fn inspect_item(&mut self, destress: &StressManager) -> (usize, Item) {
+        let mut item = self.items.pop_front().expect("Why is there no item?");
+        if self.operand == 0 {
+            item = self.operation.perform(&item, &item);
         } else {
-            panic!("This is bad");
+            item = self.operation.perform(&item, &self.operand);
+        }
+
+        item = destress.perform(item);
+        // let new_val = item.clone();
+        if item % &self.quotient == 0 {
+            (self.if_true, item)
+        } else {
+            (self.if_false, item)
         }
     }
 }
