@@ -1,6 +1,7 @@
 pub mod day1;
 pub mod day10;
 pub mod day11;
+pub mod day12;
 pub mod day2;
 pub mod day3;
 pub mod day4;
@@ -37,6 +38,7 @@ fn main() {
             9 => day9::day_main,
             10 => day10::day_main,
             11 => day11::day_main,
+            12 => day12::day_main,
             _ => panic!("Not yet implemented!"),
         }
     };
